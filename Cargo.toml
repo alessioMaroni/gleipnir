@@ -1,0 +1,40 @@
+[package]
+name = "gleipnir"
+version = "0.1.0"
+edition = '2024'
+
+description = "A native Rust Sandbox Library compatible with python"
+keywords = [
+    "sandbox",
+    "linux",
+    "python"
+]
+
+license = "MIT OR Apache-2.0"
+license-file = "LICENSE"
+readme = "README.md"
+authors = [
+    "Alessio Maroni <https://github.com/alessioMaroni>"
+]
+repository = "https://github.com/alessioMaroni/gleipnir"
+
+include = [
+    "src/**/*",
+    "README.md",
+    "LICENSE*",
+    "Cargo.toml"
+]
+
+exclude = []
+
+[dependencies]
+nix = "0.31.3"
+
+[lib]
+crate-type = [
+    "cdylib", 
+    "rlib"
+]
+
+[lints.rust]
+unsafe_code = "forbid"

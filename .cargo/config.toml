@@ -1,0 +1,28 @@
+[alias]
+b = "build"
+bj = "build -j 3"
+c = "check"
+cl = "clean"
+t = "test"
+tn = "test -- --nocapture"
+ex = "run --example"
+doc = "doc --no-deps --open"
+
+[build]
+warnings = "deny"
+rustc-wrapper = "sccache"
+rustdocflags = ["-D", "warnings"]
+rustflags = [
+    "-D", "warnings",
+    "-C", "overflow-checks=on",
+]
+
+[profile.dev]
+overflow-checks = true
+debug-assertions = true
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+strip = "debuginfo"
