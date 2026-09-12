@@ -1,10 +1,15 @@
+pub mod setup;
+
+use setup::path::ExecutablePath;
+use std::path::Path;
+
 pub struct Sandbox {
-    path: String,
+    path: ExecutablePath,
 }
 
 #[derive(Default)]
 pub struct SandboxBuilder {
-    path: Option<String>,
+    path: Option<ExecutablePath>,
 }
 
 impl SandboxBuilder {
@@ -12,14 +17,22 @@ impl SandboxBuilder {
         Self::default()
     }
 
-    pub fn path(mut self, path: impl Into<String>) -> Self {
-        self.path = Some(path.into());
+    pub fn path(mut self, path: impl AsRef<Path>) -> Self {
+        self.path = Some(ExecutablePath::new(path));
         self
     }
 
     pub fn build(self) -> Result<Sandbox, &'static str> {
-        let path = self.path.ok_or("Executable path is required")?;
-        Ok(Sandbox { path })
+        let mut exec_path = self.path.ok_or("Executable path is required")?;
+
+        match exec_path.verify() {
+            Ok(true) => Ok(Sandbox { path: exec_path }),
+            Ok(false) => {
+                exec_path.debug_executable_path_struct();
+                Err("Provided path is not a valid executable file")
+            }
+            Err(_) => Err("Failed to access or read executable path"),
+        }
     }
 }
 
@@ -29,14 +42,13 @@ impl Sandbox {
     }
 
     pub fn run(&self) {
-        println!("Running sandbox with binary: {}", self.path);
+        println!("Running sandbox with binary: {}", self.path.inner.display());
     }
 
-    pub fn path(&self) -> &str {
-        &self.path
+    pub fn path(&self) -> &Path {
+        &self.path.inner
     }
 }
-
 #[cfg(test)]
 mod test {
     use super::*;
