@@ -1,11 +1,27 @@
+//! # NAME
+//! `gleipnir::setup::path` - Target executable path location and ELF binary validation
+//!
+//! # SYNOPSIS
 //! ```rust
 //! use gleipnir::setup::path::ExecutablePath;
+//!
+//! let mut exec_path = ExecutablePath::new("/usr/bin/ls");
+//! if exec_path.verify().unwrap_or(false) {
+//!     println!("Valid executable binary found.");
+//! } else {
+//!     exec_path.debug_executable_path_struct();
+//! }
 //! ```
-//! 
-//! Manage "executable file's" path locating and verification
-//! - Check if the path exist
-//! - If is a file
-//!     - If it's executable
+//!
+//! # DESCRIPTION
+//! The `path` module handles validation for target binaries prior to sandbox execution.
+//! It guarantees that a given file system path satisfies three critical criteria:
+//!
+//! 1. **Existence**: The path points to an existing entry on the target file system.
+//! 2. **File Type**: The path represents a regular file (not a directory, FIFO, block device, or socket).
+//! 3. **Execution Eligibility**:
+//!    - **POSIX Permissions**: The file mode mask satisfies execution bit criteria (`mode & 0o111 != 0`).
+//!    - **ELF Binary Format**: The first 4 bytes match the Executable and Linkable Format (ELF) magic header (`\x7FELF` or `[0x7F, 0x45, 0x4C, 0x46]`).
 
 use std::fs::File;
 use std::io::{self, Read};
@@ -14,8 +30,12 @@ use std::path::{Path, PathBuf};
 
 type Result<T> = std::result::Result<T, io::Error>;
 
+/// Represents a candidate binary path and tracks its verification state.
+///
+/// Holds the underlying target [`PathBuf`] and status flags updated during calling [`verify`](ExecutablePath::verify).
 #[derive(Debug, Clone)]
 pub struct ExecutablePath {
+    /// The target file system path stored as a [`PathBuf`].
     pub inner: PathBuf,
     exist: bool,
     is_file: bool,
@@ -23,15 +43,40 @@ pub struct ExecutablePath {
 }
 
 impl ExecutablePath {
+    /// Creates a new `ExecutablePath` instance from any path-like reference.
+    ///
+    /// Accepts types implementing `AsRef<Path>` (`&str`, `String`, `&Path`, `PathBuf`), avoiding forced path allocations by the caller.
+    ///
+    /// # Parameters
+    /// - `path`: Path reference pointing to the target binary location.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use gleipnir::setup::path::ExecutablePath;
+    ///
+    /// let path_str = "/usr/bin/python3";
+    /// let exec_path = ExecutablePath::new(path_str);
+    /// ```
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             inner: path.as_ref().to_path_buf(),
             exist: false,
             is_file: false,
-            is_exe:false
+            is_exe: false,
         }
     }
 
+    /// Performs verification on the target path and updates internal state flags.
+    ///
+    /// Short-circuits execution and returns `Ok(false)` at the first failing stage:
+    /// 1. Verifies existence (`exits`).
+    /// 2. Verifies file type (`is_file`).
+    /// 3. Validates POSIX permission mode bitmask (`0o111`) and checks the ELF header (`0x7F454C46`).
+    ///
+    /// # Returns
+    /// - `Ok(true)` if all validation phases pass successfully.
+    /// - `Ok(false)` if any check fails or if the binary is non-executable / invalid ELF format.
+    /// - `Err(std::io::Error)` if a low-level I/O failure occurs during system metadata access.
     pub fn verify(&mut self) -> Result<bool> {
         let exist = self.exits()?;
         if !exist {
@@ -58,49 +103,57 @@ impl ExecutablePath {
         Ok(is_exe)
     }
 
+    /// Writes diagnostic failure details to standard error (`stderr`).
+    ///
+    /// Inspects internal validation flags (`exist`, `is_file`, `is_exe`) and outputs
+    /// specific failure reasons for troubleshooting target binaries.
     pub fn debug_executable_path_struct(&self) {
-        if !self.exist == true{
-            eprintln!("{:?} dosen't exist", self.inner);
+        if !self.exist {
+            eprintln!("{:?} doesn't exist", self.inner);
         }
-        
-        if !self.is_file == true {
+
+        if !self.is_file {
             eprintln!("{:?} isn't a file", self.inner);
         }
 
-        if !self.is_exe == true {
+        if !self.is_exe {
             eprintln!("{:?} isn't executable", self.inner);
         }
     }
 
-    // TODO: Consider to remove this function,
-    // function is_file alredy check is exist
+    /// Checks if the target path exists on the file system.
     fn exits(&self) -> Result<bool> {
         Ok(self.inner.exists())
     }
 
+    /// Checks if the target path points to a regular file.
     fn is_file(&self) -> Result<bool> {
         Ok(self.inner.is_file())
     }
 
+    /// Evaluates execution permission bits and checks the 4-byte ELF magic header.
+    ///
+    /// Evaluates POSIX mode mask against `0o111` (`S_IXUSR | S_IXGRP | S_IXOTH`).
+    /// Reads the first 4 bytes of the binary to match against magic sequence `[0x7F, 0x45, 0x4C, 0x46]`.
     fn is_exe(&self) -> Result<bool> {
         let path = &self.inner;
 
-        let metadata = std::fs::metadata(path)?; 
-        
-        let permission = metadata.permissions(); 
+        let metadata = std::fs::metadata(path)?;
+
+        let permission = metadata.permissions();
         if permission.mode() & 0o111 == 0 {
             return Ok(false);
         }
 
         let mut file = File::open(path)?;
         let mut buffer = [0u8; 4];
-    
+
         if file.read_exact(&mut buffer).is_err() {
             return Ok(false);
         }
 
         let elf_magic = [0x7F, 0x45, 0x4C, 0x46];
-    
+
         Ok(buffer == elf_magic)
     }
 }
@@ -159,7 +212,7 @@ mod tests {
     fn test_valid_elf_executable() -> io::Result<()> {
         let temp_path = std::env::temp_dir().join("gleipnir_valid_elf");
         let mut file = File::create(&temp_path)?;
-        
+
         file.write_all(&[0x7F, b'E', b'L', b'F', 0x02, 0x01, 0x01, 0x00])?;
 
         let mut perms = fs::metadata(&temp_path)?.permissions();
