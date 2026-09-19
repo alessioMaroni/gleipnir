@@ -11,5 +11,8 @@ pkgs.mkShell {
     sccache
     docker
     docker-compose
+    python3
+    python3Packages.pip
+    maturin
   ];
 }

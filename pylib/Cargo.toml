@@ -1,0 +1,12 @@
+[package]
+name = "pylib"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gleipnir = { workspace = true }
+pyo3 = { workspace = true }
+
+[lib]
+name = "pypnir"
+crate-type = ["cdylib"]
