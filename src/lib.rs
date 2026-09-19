@@ -49,16 +49,29 @@ impl Sandbox {
     pub fn run(&self) {
         println!("Running sandbox with binary: {}", self.path.inner.display());
 
-        match unsafe{fork()}{
-            Ok(ForkResult::Parent {child}) => {
+        match unsafe { fork() } {
+            Ok(ForkResult::Parent { child }) => {
                 println!("Continuing execution in parent process, new child has pid: {}", child);
                 waitpid(child, None).unwrap();
             }
             Ok(ForkResult::Child) => {
-                write(std::io::stdout(), "[Child] \n".as_bytes()).ok();
+                write(std::io::stdout(), "[Child 1] \n".as_bytes()).ok();
+
+                match unsafe { fork() } {
+                    Ok(ForkResult::Parent { child }) => {
+                        println!("Continuing execution in parent process, second child has pid: {}", child);
+                        waitpid(child, None).unwrap();
+                    }
+                    Ok(ForkResult::Child) => {
+                        write(std::io::stdout(), "[Child 2] \n".as_bytes()).ok();
+                        unsafe { libc::_exit(0) };
+                    }
+                    Err(_) => println!("Fork error in second child"),
+                }
+
                 unsafe { libc::_exit(0) };
             }
-            Err(_) => println!("Fork error"),
+            Err(_) => println!("Fork error in main process"),
         }
     }
 
