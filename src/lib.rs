@@ -1,6 +1,10 @@
 pub mod setup;
 
 use setup::path::ExecutablePath;
+
+use nix::{sys::wait::waitpid,unistd::{fork, ForkResult, write}};
+use libc;
+
 use std::path::Path;
 
 pub struct Sandbox {
@@ -41,14 +45,28 @@ impl Sandbox {
         SandboxBuilder::new()
     }
 
+    #[allow(unsafe_code)]
     pub fn run(&self) {
         println!("Running sandbox with binary: {}", self.path.inner.display());
+
+        match unsafe{fork()}{
+            Ok(ForkResult::Parent {child}) => {
+                println!("Continuing execution in parent process, new child has pid: {}", child);
+                waitpid(child, None).unwrap();
+            }
+            Ok(ForkResult::Child) => {
+                write(std::io::stdout(), "[Child] \n".as_bytes()).ok();
+                unsafe { libc::_exit(0) };
+            }
+            Err(_) => println!("Fork error"),
+        }
     }
 
     pub fn path(&self) -> &Path {
         &self.path.inner
     }
 }
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -56,7 +74,7 @@ mod test {
     #[test]
     fn main_test() -> Result<(), &'static str> {
         let sandbox = Sandbox::setup()
-            .path("/usr/bin/python3")
+            .path("build/test")
             .build()?;
 
         sandbox.run();

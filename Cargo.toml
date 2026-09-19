@@ -27,7 +27,8 @@ include = [
 exclude = []
 
 [dependencies]
-nix = "0.31.3"
+libc = "0.2.189"
+nix = { version = "0.31.3", features = ["process"] }
 
 [lib]
 crate-type = [
@@ -36,4 +37,4 @@ crate-type = [
 ]
 
 [lints.rust]
-unsafe_code = "forbid"
+unsafe_code = "deny"
