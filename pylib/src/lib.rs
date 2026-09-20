@@ -1,6 +1,6 @@
 // TODO: Change Project Name to pypnir
 
-use ::gleipnir::{Sandbox, SandboxBuilder};
+use ::pypnir::{Sandbox, SandboxBuilder};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 

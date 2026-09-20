@@ -1,9 +1,9 @@
 //! # NAME
-//! `gleipnir::setup::path` - Target executable path location and ELF binary validation
+//! `pypnir::setup::path` - Target executable path location and ELF binary validation
 //!
 //! # SYNOPSIS
 //! ```rust
-//! use gleipnir::setup::path::ExecutablePath;
+//! use pypnir::setup::path::ExecutablePath;
 //!
 //! let mut exec_path = ExecutablePath::new("/usr/bin/ls");
 //! if exec_path.verify().unwrap_or(false) {
@@ -52,7 +52,7 @@ impl ExecutablePath {
     ///
     /// # Examples
     /// ```rust
-    /// use gleipnir::setup::path::ExecutablePath;
+    /// use pypnir::setup::path::ExecutablePath;
     ///
     /// let path_str = "/usr/bin/python3";
     /// let exec_path = ExecutablePath::new(path_str);
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn test_non_existent_path() {
-        let mut exec = ExecutablePath::new("/path/that/does/not/exist/gleipnir_test");
+        let mut exec = ExecutablePath::new("/path/that/does/not/exist/pypnir_test");
         assert_eq!(exec.verify().unwrap(), false);
     }
 
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_file_without_execution_permissions() -> io::Result<()> {
-        let temp_path = std::env::temp_dir().join("gleipnir_no_exec.txt");
+        let temp_path = std::env::temp_dir().join("pypnir_no_exec.txt");
         let mut file = File::create(&temp_path)?;
         file.write_all(b"test file content")?;
 
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_executable_file_invalid_elf_header() -> io::Result<()> {
-        let temp_path = std::env::temp_dir().join("gleipnir_script.sh");
+        let temp_path = std::env::temp_dir().join("pypnir_script.sh");
         let mut file = File::create(&temp_path)?;
         file.write_all(b"#!/bin/sh\necho hello")?;
 
@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn test_valid_elf_executable() -> io::Result<()> {
-        let temp_path = std::env::temp_dir().join("gleipnir_valid_elf");
+        let temp_path = std::env::temp_dir().join("pypnir_valid_elf");
         let mut file = File::create(&temp_path)?;
 
         file.write_all(&[0x7F, b'E', b'L', b'F', 0x02, 0x01, 0x01, 0x00])?;

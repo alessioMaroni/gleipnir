@@ -1,4 +1,4 @@
-//! Gleipnir Sandbox Library
+//! Pypnir Sandbox Library
 
 // Setup module.
 // Contains the initialization functions for the Sandbox:
@@ -25,7 +25,7 @@ use std::process::Command;
 /// # Examples
 ///
 /// ```rust,no_run
-/// use gleipnir::Sandbox;
+/// use pypnir::Sandbox;
 ///
 /// fn main() -> Result<(), &'static str> {
 ///     let sandbox = Sandbox::setup()
@@ -143,7 +143,7 @@ impl Sandbox {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use gleipnir::Sandbox;
+    /// use pypnir::Sandbox;
     ///
     /// let sandbox = Sandbox::setup()
     ///     .path("build/test")

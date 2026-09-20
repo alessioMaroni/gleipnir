@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-gleipnir = { workspace = true }
+pypnir = { workspace = true }
 pyo3 = { workspace = true }
 
 [lib]

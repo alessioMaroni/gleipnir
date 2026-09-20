@@ -1,5 +1,5 @@
 [package]
-name = "gleipnir"
+name = "pypnir"
 version = "0.1.0"
 edition = "2024"
 
@@ -15,7 +15,7 @@ readme = "README.md"
 authors = [
     "Alessio Maroni <https://github.com/alessioMaroni>"
 ]
-repository = "https://github.com/alessioMaroni/gleipnir"
+repository = "https://github.com/alessioMaroni/pypnir"
 
 include = [
     "src/**/*",
@@ -46,7 +46,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-gleipnir = { path = "." }
+pypnir = { path = "." }
 pyo3 = { version = "0.29.2", features = ["extension-module"] }
 
 [lints.rust]
