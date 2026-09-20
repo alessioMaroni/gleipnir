@@ -28,7 +28,7 @@ exclude = []
 
 [dependencies]
 libc = "0.2.189"
-nix = { version = "0.31.3", features = ["process"] }
+nix = { version = "0.31.3", features = ["process","sched"] }
 pyo3 = { workspace = true }
 
 [lib]

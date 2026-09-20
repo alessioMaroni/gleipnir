@@ -14,6 +14,53 @@ use libc;
 use std::path::Path;
 use std::process::Command;
 
+/// Sandbox Security Level,
+/// enumeration of the security level of the sandbox
+pub enum BSL_LEVEL {
+    /// # BSL Custom
+    /// The user is free to configure the individual security level for other components:
+    ///     - namespaces
+    ///     - syscalls
+    BSL_CUSTOM,
+
+    /// # BSL Free
+    /// The program has no restrictions.
+    /// Useful if you want to capture the system calls made by the program without restricting it.
+    BSL_FREE,
+
+    /// # BSL 1: Basic Isolation
+    /// Provides a minimal layer of security, useful for preventing accidental system modifications.
+    /// - Filesystem: Basic `chroot` or pivot_root.
+    /// - Network: Enabled (shares host network).
+    /// - Syscalls: Permissive default profile (blocks only kernel-level modifications like `kexec`, `bpf`).
+    BSL_1,
+
+    /// # BSL 2: Standard Isolation
+    /// Recommended for general-purpose untrusted applications.
+    /// - Filesystem: Read-only access to core system files, private `/tmp`.
+    /// - Network: Disabled (isolated network namespace).
+    /// - Syscalls: Standard `seccomp` blacklist (blocks `ptrace`, `mount`, `chown`, and administrative calls).
+    /// - Capabilities: Drops standard elevated privileges (e.g., `CAP_SYS_ADMIN`).
+    BSL_2,
+
+    /// # BSL 3: Strict Isolation
+    /// Designed for executing highly untrusted or potentially malicious code safely.
+    /// - Filesystem: No access to the host OS (runs in an empty or strictly limited `tmpfs`).
+    /// - Network: Disabled.
+    /// - Syscalls: Strict `seccomp` whitelist (allows only basic execution, memory allocation, and I/O).
+    /// - Capabilities: Drops ALL Linux capabilities (empty bounding set).
+    BSL_3,
+
+    /// # BSL 4: Paranoid Isolation (Compute Only)
+    /// The absolute most restrictive environment, ideal for pure mathematical/computational tasks or pure algorithms.
+    /// - Filesystem: Completely isolated (no access whatsoever).
+    /// - Network: Disabled.
+    /// - Syscalls: Ultra-strict `seccomp` profile allowing ONLY `read`, `write` (on pre-opened file descriptors like `stdout`), `sigreturn`, and `exit`.
+    /// - IPC: Fully isolated.
+    BSL_4,
+}
+
+
 /// Represents the isolation environment (sandbox) for executing a target binary.
 ///
 /// `Sandbox` is the primary struct of the library. It manages executable file
@@ -39,6 +86,9 @@ use std::process::Command;
 pub struct Sandbox {
     /// Path to the verified executable ready for execution.
     path: ExecutablePath,
+    
+    /// Isolation level
+    bsl_level: BSL_LEVEL,
 }
 
 /// A builder for constructing and configuring a [`Sandbox`].
@@ -49,6 +99,8 @@ pub struct Sandbox {
 pub struct SandboxBuilder {
     /// Optional path to the target executable, validated during [`build`](Self::build).
     path: Option<ExecutablePath>,
+
+    //    bsl_level: Option<BSL_LEVEL>
 }
 
 impl SandboxBuilder {
