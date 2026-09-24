@@ -1,3 +1,5 @@
+# Same sintax as rust
+
 import pypnir
 
 def main():
